@@ -1,10 +1,20 @@
 import { Router } from "express";
-import { addContentHandler, signinHandler, signupHandler } from "../controllers/user.controller";
+import { signinHandler, signupHandler } from "../controllers/auth.controller";
 import { userAuth } from "../middlewares/user-auth.middleware";
+import {
+  addContentHandler,
+  deleteContentHandler,
+  getContentHandler,
+} from "../controllers/content.controller";
 const userRouter = Router();
 
+// auth routes
 userRouter.post("/signup", signupHandler);
 userRouter.post("/signin", signinHandler);
-userRouter.get("/add-content", userAuth, addContentHandler);
+
+// content routes
+userRouter.post("/add-content", userAuth, addContentHandler);
+userRouter.get("/contents", userAuth, getContentHandler);
+userRouter.delete("/content", userAuth, deleteContentHandler);
 
 export { userRouter };
