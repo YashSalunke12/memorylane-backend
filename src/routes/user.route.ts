@@ -8,11 +8,11 @@ import {
 } from "../controllers/content.controller";
 const userRouter = Router();
 
-// auth routes
+// auth-routes
 userRouter.post("/signup", signupHandler);
 userRouter.post("/signin", signinHandler);
 
-// content routes
+// content-routes
 userRouter.post("/add-content", userAuth, addContentHandler);
 userRouter.get("/contents", userAuth, getContentHandler);
 userRouter.delete("/content", userAuth, deleteContentHandler);
