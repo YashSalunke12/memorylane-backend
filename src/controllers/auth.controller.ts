@@ -1,47 +1,58 @@
 import { Request, Response } from "express";
 import { sign } from "jsonwebtoken";
+import { compare } from "bcrypt";
 import { UserModel } from "../models/user.model";
+import { asyncHandler } from "../utils/async-handler";
+import { ApiResponse } from "../utils/api-response";
+import { ApiError } from "../utils/api-error-response";
 
+export const signupHandler = asyncHandler(
+  async (req: Request, res: Response): Promise<void> => {
+    const { username, email, password } = req.body;
 
-export const signupHandler = async (req: Request, res: Response): Promise<void> => {
-    try {
-        const { username, email, password } = req.body;
-    
-        const userExists = await UserModel.findOne({ email });
-        if(userExists) {
-            res.status(409).json({ message: "user already exists" });
-            return;
-        }
-    
-        const user = await UserModel.create({
-            username,
-            email,
-            password,
-        });
-    
-        res.status(201).json({ message: "user created successfully" });
-    } catch (error) {
-        console.log("signup error", error);
-        res.status(500).json({ message: "Internal server error" });
+    const userExists = await UserModel.findOne({ email });
+    if (userExists) {
+      throw new ApiError(409, "user already exists");
     }
-};
 
+    const user = await UserModel.create({
+      username,
+      email,
+      password,
+    });
 
-export const signinHandler = async (req: Request, res: Response): Promise<void> => {
-    try {
-        const { email, password } = req.body;
-    
-        const existingUser = await UserModel.findOne({ email, password });
-        if(!existingUser) {
-            res.status(404).json({ message: "user doesn't exists or incorrect password" });
-            return;
-        }
-    
-        const token = sign({ id: existingUser._id }, process.env.JWT_SECRET as string);
-    
-        res.status(200).json({ message: "signup successful", token });
-    } catch (error) {
-        console.log("signin error", error)
-        res.status(500).json({ message: "Internal server error" });
+    const response = new ApiResponse(201, {}, "user created successfully");
+    res.status(response.statusCode).json(response);
+  }
+);
+
+export const signinHandler = asyncHandler(
+  async (req: Request, res: Response): Promise<void> => {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      throw new ApiError(400, "Email and password are required");
     }
-}
+
+    const existingUser = await UserModel.findOne({ email });
+    if (!existingUser) {
+      throw new ApiError(404, "User does not exist");
+    }
+
+    // const isPasswordValid = await compare(password, existingUser.password);
+    // if (!isPasswordValid) {
+    //   throw new ApiError(401, "Incorrect password");
+    // }
+
+    const token = sign(
+      { id: existingUser._id },
+      process.env.JWT_SECRET as string,
+      {
+        expiresIn: "24h",
+      }
+    );
+
+    const response = new ApiResponse(200, { token }, "Signin successful");
+    res.status(response.statusCode).json(response);
+  }
+);
